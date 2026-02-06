@@ -39,41 +39,40 @@
 void init_msgpack_functions(QoreNamespace& ns);
 void init_msgpack_constants(QoreNamespace& ns);
 
-QoreStringNode *msgpack_module_init();
-void msgpack_module_ns_init(QoreNamespace *rns, QoreNamespace *qns);
-void msgpack_module_delete();
+static void msgpack_module_init(QoreModuleInitContext& ctx, ExceptionSink& xsink);
+static void msgpack_module_ns_init(QoreNamespace* rns, QoreNamespace* qns, ExceptionSink& xsink);
+static void msgpack_module_delete();
 
-// qore module symbols
-DLLEXPORT char qore_module_name[] = "msgpack";
-DLLEXPORT char qore_module_version[] = PACKAGE_VERSION;
-DLLEXPORT char qore_module_description[] = "MessagePack module";
-DLLEXPORT char qore_module_author[] = "Ondrej Musil <ondrej.musil@qoretechnologies.com>";
-DLLEXPORT char qore_module_url[] = "https://github.com/qorelanguage/module-msgpack";
-DLLEXPORT int qore_module_api_major = QORE_MODULE_API_MAJOR;
-DLLEXPORT int qore_module_api_minor = QORE_MODULE_API_MINOR;
-DLLEXPORT qore_module_init_t qore_module_init = msgpack_module_init;
-DLLEXPORT qore_module_ns_init_t qore_module_ns_init = msgpack_module_ns_init;
-DLLEXPORT qore_module_delete_t qore_module_delete = msgpack_module_delete;
-
-DLLEXPORT qore_license_t qore_module_license = QL_MIT;
-DLLEXPORT char qore_module_license_str[] = "MIT";
+extern "C" DLLEXPORT void msgpack_qore_module_desc(QoreModuleInfo& mod_info) {
+    mod_info.name = "msgpack";
+    mod_info.version = PACKAGE_VERSION;
+    mod_info.desc = "MessagePack module";
+    mod_info.author = "Ondrej Musil <ondrej.musil@qoretechnologies.com>";
+    mod_info.url = "https://github.com/qorelanguage/module-msgpack";
+    mod_info.api_major = QORE_MODULE_API_MAJOR;
+    mod_info.api_minor = QORE_MODULE_API_MINOR;
+    mod_info.init = msgpack_module_init;
+    mod_info.ns_init = msgpack_module_ns_init;
+    mod_info.del = msgpack_module_delete;
+    mod_info.license = QL_MIT;
+    mod_info.license_str = "MIT";
+}
 
 QoreNamespace MsgPackNS("Qore::msgpack");
 
-QoreStringNode* msgpack_module_init() {
+static void msgpack_module_init(QoreModuleInitContext& ctx, ExceptionSink& xsink) {
     MsgPackNS.addSystemClass(initMsgPackClass(MsgPackNS));
     MsgPackNS.addSystemClass(initMsgPackExtensionClass(MsgPackNS));
     init_msgpack_functions(MsgPackNS);
     init_msgpack_constants(MsgPackNS);
 
-    return 0;
 }
 
-void msgpack_module_ns_init(QoreNamespace* rns, QoreNamespace* qns) {
+static void msgpack_module_ns_init(QoreNamespace* rns, QoreNamespace* qns, ExceptionSink& xsink) {
     qns->addNamespace(MsgPackNS.copy());
 }
 
-void msgpack_module_delete() {
+static void msgpack_module_delete() {
     // nothing to do here in this case
 }
 
