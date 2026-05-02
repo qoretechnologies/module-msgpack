@@ -129,7 +129,8 @@ QoreHashNode* msgpack_unpack_map(mpack_reader_t* reader, mpack_tag_t tag, Operat
         }
 
         // add element to hash
-        hash->setKeyValue(key->get<QoreStringNode>()->c_str(), value.release(), xsink);
+        QoreStringValueHelper key_str(*key);
+        hash->setKeyValue(key_str->c_str(), value.release(), xsink);
     }
 
     mpack_done_map(reader);
