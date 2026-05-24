@@ -199,7 +199,7 @@ hash example = {"compact": True, "schema": 0};
 *binary packed = msgpack_pack(example);
     @endcode
  */
-*binary msgpack_pack(auto value, int mode = MSGPACK_SIMPLE_MODE) [flags=RET_VALUE_ONLY] {
+*binary msgpack_pack(auto value, int mode = MSGPACK_SIMPLE_MODE) [flags=RET_VALUE_ONLY,NAMED_ARGS] {
     // check operation mode first
     if (msgpack::checkOperationMode(xsink, mode))
         return QoreValue();
@@ -223,7 +223,7 @@ hash example = {"compact": True, "schema": 0};
 
 //! Unpacks serialized MessagePack value.
 /**
-    @param value value to unpack
+    @param data data to unpack
     @param mode operation mode
 
     @returns unpacked Qore value
@@ -242,14 +242,14 @@ hash example = {"compact": True, "schema": 0};
 auto unpacked = msgpack_unpack(packed);
     @endcode
  */
-auto msgpack_unpack(binary value, int mode = MSGPACK_SIMPLE_MODE) [flags=RET_VALUE_ONLY] {
+auto msgpack_unpack(binary data, int mode = MSGPACK_SIMPLE_MODE) [flags=RET_VALUE_ONLY,NAMED_ARGS] {
     // check operation mode first
     if (msgpack::checkOperationMode(xsink, mode))
         return QoreValue();
 
     try {
         QoreValue result(msgpack::intern::msgpack_unpack(
-            value,
+            data,
             static_cast<msgpack::OperationMode>(mode),
             xsink
         ));
