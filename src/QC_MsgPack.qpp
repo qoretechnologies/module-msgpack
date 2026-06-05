@@ -46,7 +46,7 @@ qclass MsgPack [arg=msgpack::MsgPack* mp; ns=msgpack; flags=final];
 
     @throw INVALID-MODE passed operation mode is invalid
  */
-MsgPack::constructor(int mode = MSGPACK_SIMPLE_MODE) {
+MsgPack::constructor(int mode = MSGPACK_SIMPLE_MODE) [flags=NAMED_ARGS] {
     if (msgpack::checkOperationMode(xsink, mode))
         return;
     msgpack::OperationMode m = static_cast<msgpack::OperationMode>(mode);
@@ -73,7 +73,7 @@ MsgPack mp();
 mp.setOperationMode(MSGPACK_QORE_MODE);
     @endcode
  */
-nothing MsgPack::setOperationMode(int mode) {
+nothing MsgPack::setOperationMode(int mode) [flags=NAMED_ARGS] {
     if (msgpack::checkOperationMode(xsink, mode))
         return QoreValue();
     mp->setOperationMode(static_cast<msgpack::OperationMode>(mode));
@@ -94,13 +94,13 @@ hash example = {"compact": True, "schema": 0};
 *binary packed = mp.pack(example);
     @endcode
  */
-*binary MsgPack::pack(auto value) {
+*binary MsgPack::pack(auto value) [flags=NAMED_ARGS] {
     return mp->pack(xsink, value);
 }
 
 //! Unpack the passed data.
 /**
-    @param value data to unpack
+    @param data data to unpack
     @return unpacked Qore value
 
     @throw ENCODING-ERROR encoding error occured during unpacking
@@ -118,6 +118,6 @@ hash example = {"compact": True, "schema": 0};
 auto unpacked = mp.unpack(packed);
     @endcode
  */
-auto MsgPack::unpack(binary value) {
-    return mp->unpack(xsink, value);
+auto MsgPack::unpack(binary data) [flags=NAMED_ARGS] {
+    return mp->unpack(xsink, data);
 }

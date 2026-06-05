@@ -40,19 +40,19 @@ qclass MsgPackExtension [arg=msgpack::MsgPackExtension* ext; ns=msgpack; flags=f
 
 //! Creates the MsgPackExtension object.
 /**
-    @param extType extension type
-    @param bin extension's binary data
+    @param extension_type extension type
+    @param data extension's binary data
 
     @throw INVALID-EXT-TYPE invalid extension type
  */
-MsgPackExtension::constructor(int extType, binary bin) {
-    if (extType < -127 || extType > 128) {
+MsgPackExtension::constructor(int extension_type, binary data) [flags=NAMED_ARGS] {
+    if (extension_type < -127 || extension_type > 128) {
         xsink->raiseException("INVALID-EXT-TYPE", "invalid extension type (valid range: -127..128)");
         return;
     }
-    BinaryNode* b = const_cast<BinaryNode*>(bin);
+    BinaryNode* b = const_cast<BinaryNode*>(data);
     b->ref();
-    self->setPrivate(CID_MSGPACKEXTENSION, new msgpack::MsgPackExtension((int8_t)extType, b));
+    self->setPrivate(CID_MSGPACKEXTENSION, new msgpack::MsgPackExtension((int8_t)extension_type, b));
 }
 
 //! Get extension type ID.

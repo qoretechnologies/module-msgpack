@@ -16,6 +16,7 @@ class MsgPackTest inherits QUnit::Test {
         addTestCase("MsgPack class Qore mode test", \MsgPackQoreModeTest());
         addTestCase("Pack test", \packTest());
         addTestCase("Unpack test", \unpackTest());
+        addTestCase("Named argument calls", \namedArgumentTest());
         addTestCase("Timestamp test", \timestampTest());
         set_return_value(main());
     }
@@ -753,5 +754,23 @@ class MsgPackTest inherits QUnit::Test {
         b = createPackedExt(-1, bindata.encodeMsb(4) + <000000005C19DB9B>);
         rv = msgpack_unpack(b);
         assertEq(2018-12-19T05:48:11.123456+00:00, rv);
+    }
+
+    namedArgumentTest() {
+        hash<auto> value = {"compact": True, "schema": 0};
+        binary packed = msgpack_pack(value: value, mode: MSGPACK_SIMPLE_MODE);
+        assertEq(value, msgpack_unpack(data: packed, mode: MSGPACK_SIMPLE_MODE));
+
+        MsgPack mp(mode: MSGPACK_SIMPLE_MODE);
+        packed = mp.pack(value: value);
+        assertEq(value, mp.unpack(data: packed));
+
+        mp.setOperationMode(mode: MSGPACK_QORE_MODE);
+        packed = mp.pack(value: value);
+        assertEq(value, mp.unpack(data: packed));
+
+        MsgPackExtension ext(extension_type: 42, data: <feed>);
+        assertEq(42, ext.getExtType());
+        assertEq(<feed>, ext.getData());
     }
 }
