@@ -3,6 +3,10 @@
 
 %modern
 
+# msgpack_pack() has to resolve these; see indirectReferencesTest()
+%allow-weak-references
+%allow-opaque-references
+
 %requires QUnit
 %requires msgpack
 
@@ -16,6 +20,7 @@ class MsgPackTest inherits QUnit::Test {
         addTestCase("MsgPack class Qore mode test", \MsgPackQoreModeTest());
         addTestCase("Pack test", \packTest());
         addTestCase("Unpack test", \unpackTest());
+        addTestCase("Indirect references test", \indirectReferencesTest());
         addTestCase("Named argument calls", \namedArgumentTest());
         addTestCase("Timestamp test", \timestampTest());
         set_return_value(main());
@@ -52,6 +57,40 @@ class MsgPackTest inherits QUnit::Test {
             return <c9> + size.encodeMsb(8)[4..7] + binExtType + bin;
         }
         throw "TOO-LARGE", "too large binary";
+    }
+
+    #! A container member holding a weak or opaque reference must pack as its target
+    /** Iterating a container yields the reference that was stored in it rather than its target, so
+        without QoreValue::resolveIndirect() in msgpack_pack_qore_value() such a member is rejected
+        with "serializing values of type 'weak hash reference' is not supported", even though the
+        target is an ordinary hash or list.
+    */
+    indirectReferencesTest() {
+        hash<auto> inner = {"a": 1, "b": "two"};
+        list<auto> ilist = (1, "two", 3);
+
+        # hash and list are packed by separate loops, so cover both as holder and as target
+        hash<auto> weak = {};
+        weak{"h"} := inner;
+        weak{"l"} := ilist;
+        assertEq({"h": inner, "l": ilist}, msgpack_unpack(msgpack_pack(weak)),
+            "weak references in a hash pack as their targets");
+
+        list<auto> weak_list = ();
+        weak_list[0] := inner;
+        assertEq((inner,), msgpack_unpack(msgpack_pack(weak_list)),
+            "a weak reference in a list packs as its target");
+
+        hash<auto> opaque = {};
+        opaque{"h"} @= inner;
+        opaque{"l"} @= ilist;
+        assertEq({"h": inner, "l": ilist}, msgpack_unpack(msgpack_pack(opaque)),
+            "opaque references in a hash pack as their targets");
+
+        list<auto> opaque_list = ();
+        opaque_list[0] @= ilist;
+        assertEq((ilist,), msgpack_unpack(msgpack_pack(opaque_list)),
+            "an opaque reference in a list packs as its target");
     }
 
     basicSimpleModeTest() {

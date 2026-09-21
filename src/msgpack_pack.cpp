@@ -175,6 +175,11 @@ void msgpack_pack_qore_string(mpack_writer_t* writer, const QoreString* value, O
 }
 
 void msgpack_pack_qore_value(mpack_writer_t* writer, QoreValue value, OperationMode mode, ExceptionSink* xsink) {
+    // A container holds what was assigned to it, so a member assigned with the weak reference
+    // operator ":=" or the opaque reference operator "@=" is stored as the reference itself;
+    // iterating the container yields that, not its target.  Resolve before dispatching, or an
+    // ordinary serializable target is rejected as an unsupported type.
+    value = value.resolveIndirect();
     switch (value.getType()) {
         case NT_BINARY:                     // BinaryNode
             msgpack_pack_qore_binary(writer, value.get<const BinaryNode>()); break;
