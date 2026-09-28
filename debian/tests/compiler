@@ -1,0 +1,18 @@
+#!/bin/sh
+# Copyright (C) 2026 David Nichols
+# SPDX-License-Identifier: MIT
+set -eu
+unset QORE_MODULE_DIR QORE_MODULE_DIR_ONLY QORE_INCLUDE_DIR LD_LIBRARY_PATH LD_PRELOAD
+cd "$AUTOPKGTEST_TMP"
+cat > msgpack-smoke.q <<'EOF'
+%modern
+%requires msgpack
+hash<auto> expected = {"name": "package test", "count": 42};
+binary encoded = msgpack_pack(value: expected, mode: MSGPACK_QORE_MODE);
+auto decoded = msgpack_unpack(data: encoded, mode: MSGPACK_QORE_MODE);
+if (decoded != expected) {
+    exit(1);
+}
+EOF
+/usr/bin/qcc -o msgpack-smoke msgpack-smoke.q
+./msgpack-smoke

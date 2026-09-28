@@ -1,0 +1,36 @@
+Source: qore-msgpack-module
+Section: interpreters
+Priority: optional
+Maintainer: David Nichols <david@qore.org>
+Build-Depends: debhelper-compat (= 13),
+               cmake (>= 3.5),
+               libqore-dev (>= 3.0.0~),
+               qore (>= 3.0.0~)
+Build-Depends-Indep: doxygen <!nodoc>
+Standards-Version: 4.7.4
+Rules-Requires-Root: no
+Homepage: https://qore.org
+Vcs-Git: https://github.com/qoretechnologies/module-msgpack.git
+Vcs-Browser: https://github.com/qoretechnologies/module-msgpack
+
+Package: qore-msgpack-module
+Architecture: any
+Depends: ${qore:Depends},
+         ${shlibs:Depends},
+         ${misc:Depends}
+Suggests: qore-msgpack-module-doc
+Description: MessagePack serialization module for Qore
+ This module encodes and decodes MessagePack data, with extension types and
+ a Qore-specific mode that preserves additional Qore value types.
+ Compiler metadata is included for Qore's tools.
+
+Package: qore-msgpack-module-doc
+Section: doc
+Architecture: all
+Multi-Arch: foreign
+Build-Profiles: <!nodoc>
+Depends: ${misc:Depends}
+Suggests: qore-msgpack-module
+Description: documentation and examples for Qore's msgpack module
+ This package contains the HTML API reference and example tests for Qore's
+ MessagePack serialization module.

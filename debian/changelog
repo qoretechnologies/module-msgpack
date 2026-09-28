@@ -1,0 +1,6 @@
+qore-msgpack-module (1.0.1+git20260928.1-0qore1~ubuntu26.04) resolute; urgency=medium
+
+  * Package the MessagePack module, compiler metadata and API reference.
+  * Qualify serialization, indirect references and installed compiler use.
+
+ -- David Nichols <david@qore.org>  Mon, 28 Sep 2026 21:39:43 +0000

@@ -1,0 +1,9 @@
+Document: qore-msgpack-module
+Title: Qore MessagePack Module Reference
+Author: Qore Technologies, s.r.o.
+Abstract: API reference for MessagePack serialization and extension types.
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/qore-msgpack-module-doc/html/index.html
+Files: /usr/share/doc/qore-msgpack-module-doc/html/*.html

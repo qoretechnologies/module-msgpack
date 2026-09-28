@@ -1,0 +1,2 @@
+usr/lib/*/qore-modules/msgpack-api-*.qmod
+usr/share/qore/metadata/msgpack/*.meta.json

@@ -38,3 +38,13 @@ docs/mainpage.dox
 docs/msgpack/
 docs/qlib/Doxyfile.*
 docs/qlib/*.dox.h
+
+# Debian package build output
+obj-*/
+debian/.debhelper/
+debian/debhelper-build-stamp
+debian/files
+debian/*.substvars
+debian/qore-msgpack-module/
+debian/qore-msgpack-module-doc/
+debian/tmp/
