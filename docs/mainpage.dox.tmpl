@@ -22,7 +22,6 @@
     The \c msgpack module provides MessagePack serialization and deserialization capabilities to Qore, allowing Qore programs to serialize data more efficiently than with JSON, XML or YAML modules.
 
     This module is released under the MIT license (see LICENSE.txt in the source distribution for more information).
-    .
     The module is tagged as such in the module's header (meaning it can be loaded unconditionally regardless of how the %Qore library was initialized).
 
     Example using @ref msgpack::msgpack_pack "msgpack_pack" and @ref msgpack::msgpack_unpack "msgpack_unpack" functions:
@@ -78,16 +77,16 @@ mp.setOperationMode(MSGPACK_SIMPLE_MODE);
 
     The following table shows how Qore values are mapped to MessagePack values during serialization:
     |!Qore Type|!MessagePack Type|!Notes
-    |\c binary|<tt>Raw Binary</tt>|
-    |\c bool|\c Boolean|
+    |\c binary|<tt>Raw Binary</tt>|&#160;
+    |\c bool|\c Boolean|&#160;
     |\c date (absolute)|<tt>Timestamp (extension)</tt>|date is converted into MessagePack Timestamp format
     |\c date (relative)|<tt>Raw String</tt>|date is converted into ISO-8601 duration format string (PnYnMnDTnHnMnS)
-    |\c float|\c Float (64bit)|
+    |\c float|\c Float (64bit)|&#160;
     |\c hash|\c Map|loses complex type information
-    |\c int|\c Integer|
+    |\c int|\c Integer|&#160;
     |\c list|\c Array|loses complex type information
-    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|
-    |\c nothing|\c Nil|
+    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|&#160;
+    |\c nothing|\c Nil|&#160;
     |\c null|\c Nil|\c NULL values are serialized to \c Nil values, becoming the same as \c NOTHING values
     |\c number|\c Float (64bit)|numbers are converted into double (64-bit float) values, thereby possibly losing precision
     |\c object| | not supported
@@ -95,17 +94,17 @@ mp.setOperationMode(MSGPACK_SIMPLE_MODE);
 
     The following table shows how MessagePack values are unpacked to Qore values:
     |!MessagePack Type|!Qore Type|!Notes
-    |\c Array|\c list|
-    |\c Boolean|\c bool|
-    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|
-    |\c Float|\c float|
-    |\c Integer (signed)|\c int|
+    |\c Array|\c list|&#160;
+    |\c Boolean|\c bool|&#160;
+    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|&#160;
+    |\c Float|\c float|&#160;
+    |\c Integer (signed)|\c int|&#160;
     |\c Integer (unsigned)|\c int or \c number|converted to \c int if smaller than 2^63 - 1, and converted to \c number otherwise
-    |\c Map|\c hash|
-    |\c Nil|\c nothing|
-    |<tt>Raw Binary</tt>|\c binary|
+    |\c Map|\c hash|&#160;
+    |\c Nil|\c nothing|&#160;
+    |<tt>Raw Binary</tt>|\c binary|&#160;
     |<tt>Raw String</tt>|\c string|assumed to be in UTF-8 encoding
-    |<tt>Timestamp (extension)</tt>|\c date|
+    |<tt>Timestamp (extension)</tt>|\c date|&#160;
 
     @subsection msgpack_qore_mode Qore Mode
 
@@ -113,39 +112,39 @@ mp.setOperationMode(MSGPACK_SIMPLE_MODE);
 
     The following table shows how Qore values are mapped to MessagePack values during Qore mode serialization:
     |!Qore Type|!MessagePack Type|!Notes
-    |\c binary|<tt>Raw Binary</tt>|
-    |\c bool|\c Boolean|
-    |\c date (absolute)|\c Extension (@ref msgpack_ext_date)|
-    |\c date (relative)|\c Extension (@ref msgpack_ext_date)|
-    |\c float|\c Float (64bit)|
+    |\c binary|<tt>Raw Binary</tt>|&#160;
+    |\c bool|\c Boolean|&#160;
+    |\c date (absolute)|\c Extension (@ref msgpack_ext_date)|&#160;
+    |\c date (relative)|\c Extension (@ref msgpack_ext_date)|&#160;
+    |\c float|\c Float (64bit)|&#160;
     |\c hash|\c Map|loses complex type information
-    |\c int|\c Integer|
+    |\c int|\c Integer|&#160;
     |\c list|\c Array|loses complex type information
-    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|
-    |\c nothing|\c Nil|
-    |\c null|\c Extension (@ref msgpack_ext_null)|
-    |\c number|\c Extension (@ref msgpack_ext_number)|
+    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|&#160;
+    |\c nothing|\c Nil|&#160;
+    |\c null|\c Extension (@ref msgpack_ext_null)|&#160;
+    |\c number|\c Extension (@ref msgpack_ext_number)|&#160;
     |\c object| | not supported
-    |\c string (UTF-8)|<tt>Raw String</tt>|
-    |\c string (non-UTF8)|\c Extension (@ref msgpack_ext_string)|
+    |\c string (UTF-8)|<tt>Raw String</tt>|&#160;
+    |\c string (non-UTF8)|\c Extension (@ref msgpack_ext_string)|&#160;
 
     The following table shows how MessagePack values are unpacked to Qore values in Qore mode:
     |!MessagePack Type|!Qore Type|!Notes
-    |\c Array|\c list|
-    |\c Boolean|\c bool|
-    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|
-    |\c Extension (@ref msgpack_ext_date)|\c date|
-    |\c Extension (@ref msgpack_ext_null)|\c null|
-    |\c Extension (@ref msgpack_ext_number)|\c number|
-    |\c Extension (@ref msgpack_ext_string)|\c string|
-    |\c Float|\c float|
-    |\c Integer (signed)|\c int|
+    |\c Array|\c list|&#160;
+    |\c Boolean|\c bool|&#160;
+    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|&#160;
+    |\c Extension (@ref msgpack_ext_date)|\c date|&#160;
+    |\c Extension (@ref msgpack_ext_null)|\c null|&#160;
+    |\c Extension (@ref msgpack_ext_number)|\c number|&#160;
+    |\c Extension (@ref msgpack_ext_string)|\c string|&#160;
+    |\c Float|\c float|&#160;
+    |\c Integer (signed)|\c int|&#160;
     |\c Integer (unsigned)|\c int or \c number|converted to \c int if smaller than 2^63 - 1, and converted to \c number otherwise
-    |\c Map|\c hash|
-    |\c Nil|\c nothing|
-    |<tt>Raw Binary</tt>|\c binary|
+    |\c Map|\c hash|&#160;
+    |\c Nil|\c nothing|&#160;
+    |<tt>Raw Binary</tt>|\c binary|&#160;
     |<tt>Raw String</tt>|\c string|assumed to be in UTF-8 encoding
-    |<tt>Timestamp (extension)</tt>|\c date|
+    |<tt>Timestamp (extension)</tt>|\c date|&#160;
 
     @section msgpack_extensions MessagePack Extensions
 
