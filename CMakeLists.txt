@@ -63,6 +63,9 @@ set(module_name "msgpack")
 
 set(QORE_DOX_TMPL_SRC
   docs/mainpage.dox.tmpl
+    docs/guide-msgpack_extensions.dox.tmpl
+    docs/guide-msgpack_operation_modes.dox.tmpl
+    docs/guide-msgpackreleasenotes.dox.tmpl
 )
 
 # disable Expect and Node API of MPack

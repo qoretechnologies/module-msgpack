@@ -1,0 +1,108 @@
+/* Copyright (C) 2026 Qore Technologies, s.r.o. */
+
+/** @page msgpack_extensionsguide MessagePack Extensions
+
+    @tableofcontents
+
+    For handling MessagePack extensions, MessagePack module uses @ref msgpack::MsgPackExtension "MsgPackExtension" class as a wrapper for extension data. This class holds two pieces of information - extension binary data and extension type (ID). @ref msgpack::MsgPackExtension "MsgPackExtension" objects are returned from the unpacking functions and user can also create these objects themselves and pass them to packing functions.
+
+    @section Qore Extension Types
+
+    In Qore operation mode values of the @ref date, @ref null and @ref number datatypes, and non-UTF8 @ref string "strings" get serialized (packed) as MessagePack extensions with the following extension types:
+
+    |! Constant |! Extension for type |! Value
+    | @ref msgpack::MSGPACK_EXT_QORE_NULL "MSGPACK_EXT_QORE_NULL" | \c null | 0
+    | @ref msgpack::MSGPACK_EXT_QORE_DATE "MSGPACK_EXT_QORE_DATE" | \c date | 1
+    | @ref msgpack::MSGPACK_EXT_QORE_NUMBER "MSGPACK_EXT_QORE_NUMBER" | \c number | 2
+    | @ref msgpack::MSGPACK_EXT_QORE_STRING "MSGPACK_EXT_QORE_STRING" | \c string | 3
+
+    @section msgpack_ext_date Date Extension
+
+    Qore date extension type uses @ref msgpack::MSGPACK_EXT_QORE_DATE "MSGPACK_EXT_QORE_DATE" extension type ID and is saved in the following format (all data in network byte order - big-endian):
+
+    Absolute dates:
+    |! |! |! |!
+    | 1 (absolute) | <a href="https://en.wikipedia.org/wiki/Unix_time">UNIX Epoch time</a> | micro-seconds | <a href="https://en.wikipedia.org/wiki/UTC_offset">UTC offset in seconds</a>
+    | 8-bit int | 64-bit int | 32-bit int | 32-bit int
+
+    Relative dates:
+    |! |! |! |! |! |! |! |!
+    | 0 (not absolute) | years | months | days | hours | minutes | seconds |  micro-seconds
+    | 8-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int
+
+    @section msgpack_ext_null NULL Extension
+
+    Qore null extension type uses @ref msgpack::MSGPACK_EXT_QORE_NULL "MSGPACK_EXT_QORE_NULL" extension type ID and has no data (zero-length).
+
+    @section msgpack_ext_number Number Extension
+
+    Qore number extension type uses @ref msgpack::MSGPACK_EXT_QORE_NUMBER "MSGPACK_EXT_QORE_NUMBER" extension type ID and is saved in the following format (all data in network byte order - big-endian):
+
+    NaN value:
+    |!
+    | @ref msgpack::MSGPACK_NUMBER_NAN "MSGPACK_NUMBER_NAN"
+    | 8-bit int
+
+    Infinity:
+    |!
+    | @ref msgpack::MSGPACK_NUMBER_INF "MSGPACK_NUMBER_INF"
+    | 8-bit int
+
+    Negative infinity:
+    |!
+    | @ref msgpack::MSGPACK_NUMBER_NINF "MSGPACK_NUMBER_NINF"
+    | 8-bit int
+
+    Normal numbers:
+    |! |! |!
+    | @ref msgpack::MSGPACK_NUMBER_NORM "MSGPACK_NUMBER_NORM" | precision | number string representation
+    | 8-bit int | 32-bit int | 1+ chars
+
+    @subsection msgpack_number_ext_constants Number Sub-type Constants
+
+    The following constants are used for distinguishing sub-types of the @ref msgpack_ext_number type:
+
+    |! Constant |! Number type |! Value
+    | @ref msgpack::MSGPACK_NUMBER_NAN "MSGPACK_NUMBER_NAN" | \c NaN | 0
+    | @ref msgpack::MSGPACK_NUMBER_INF "MSGPACK_NUMBER_INF" | \c Positive infinity | 1
+    | @ref msgpack::MSGPACK_NUMBER_NINF "MSGPACK_NUMBER_NINF" | \c Negative infinity | 2
+    | @ref msgpack::MSGPACK_NUMBER_NORM "MSGPACK_NUMBER_NORM" | \c Normal number | 3
+
+    @section msgpack_ext_string String Extension
+
+    Qore string extension type uses @ref msgpack::MSGPACK_EXT_QORE_STRING "MSGPACK_EXT_QORE_STRING" extension type ID and is saved in the following format (all data in network byte order - big-endian):
+
+    |! |!
+    | encoding constant | string data
+    | 8-bit int | 1+ chars
+
+    I.e. 1 byte for encoding and the rest for string data.
+
+    @subsection msgpack_encoding_constants Encoding Constants
+
+    The following constants are used in the @ref msgpack_ext_string format:
+    |! Constant |! Encoding |! Value
+    | @ref msgpack::QE_USASCII "QE_USASCII" | \c US-ASCII | 0
+    | @ref msgpack::QE_UTF8 "QE_UTF8" | \c UTF-8 | 1
+    | @ref msgpack::QE_UTF16 "QE_UTF16" | \c UTF-16 | 2
+    | @ref msgpack::QE_UTF16BE "QE_UTF16BE" | \c UTF-16BE | 3
+    | @ref msgpack::QE_UTF16LE "QE_UTF16LE" | \c UTF-16LE | 4
+    | @ref msgpack::QE_ISO_8859_1 "QE_ISO_8859_1" | \c ISO-8859-1 | 5
+    | @ref msgpack::QE_ISO_8859_2 "QE_ISO_8859_2" | \c ISO-8859-2 | 6
+    | @ref msgpack::QE_ISO_8859_3 "QE_ISO_8859_3" | \c ISO-8859-3 | 7
+    | @ref msgpack::QE_ISO_8859_4 "QE_ISO_8859_4" | \c ISO-8859-4 | 8
+    | @ref msgpack::QE_ISO_8859_5 "QE_ISO_8859_5" | \c ISO-8859-5 | 9
+    | @ref msgpack::QE_ISO_8859_6 "QE_ISO_8859_6" | \c ISO-8859-6 | 10
+    | @ref msgpack::QE_ISO_8859_7 "QE_ISO_8859_7" | \c ISO-8859-7 | 11
+    | @ref msgpack::QE_ISO_8859_8 "QE_ISO_8859_8" | \c ISO-8859-8 | 12
+    | @ref msgpack::QE_ISO_8859_9 "QE_ISO_8859_9" | \c ISO-8859-9 | 13
+    | @ref msgpack::QE_ISO_8859_10 "QE_ISO_8859_10" | \c ISO-8859-10 | 14
+    | @ref msgpack::QE_ISO_8859_11 "QE_ISO_8859_11" | \c ISO-8859-11 | 15
+    | @ref msgpack::QE_ISO_8859_13 "QE_ISO_8859_13" | \c ISO-8859-13 | 16
+    | @ref msgpack::QE_ISO_8859_14 "QE_ISO_8859_14" | \c ISO-8859-14 | 17
+    | @ref msgpack::QE_ISO_8859_15 "QE_ISO_8859_15" | \c ISO-8859-15 | 18
+    | @ref msgpack::QE_ISO_8859_16 "QE_ISO_8859_16" | \c ISO-8859-16 | 19
+    | @ref msgpack::QE_KOI8_R "QE_KOI8_R" | \c KOI8-R | 20
+    | @ref msgpack::QE_KOI8_U "QE_KOI8_U" | \c KOI8-U | 21
+    | @ref msgpack::QE_KOI7 "QE_KOI7" | \c KOI7 | 22
+*/

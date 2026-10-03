@@ -25,7 +25,7 @@
     The module is tagged as such in the module's header (meaning it can be loaded unconditionally regardless of how the %Qore library was initialized).
 
     Example using @ref msgpack::msgpack_pack "msgpack_pack" and @ref msgpack::msgpack_unpack "msgpack_unpack" functions:
-    @code
+    @code{.py}
 hash example = {"compact": True, "schema": 0};
 *binary packed = msgpack_pack(example);
 
@@ -35,7 +35,7 @@ auto unpacked = msgpack_unpack(packed);
     @endcode
 
     Example using the @ref msgpack::MsgPack "MsgPack" class:
-    @code
+    @code{.py}
 MsgPack mp();
 hash example = {"compact": True, "schema": 0};
 *binary packed = mp.pack(example);
@@ -47,214 +47,16 @@ auto unpacked = mp.unpack(packed);
 
     @section msgpack_operation_modes Operation modes
 
-    The msgpack module supports the following operation modes:
-    - <b>simple mode</b>: used for good inter-operability with other software using MessagePack for (de)serialization of data; may lose some precision/information for certain datatypes; this is the default
-    - <b>qore mode</b>: aims for maximum compatibility with other Qore applications; does not lose any information
+    @subpage msgpack_operation_modesguide
 
-    With the functions @ref msgpack::msgpack_pack "msgpack_pack()" and @ref msgpack::msgpack_unpack "msgpack_unpack()", operation mode can be passed as their second argument (after the value to be (un)packed), as in the following example:
-    @code
-msgpack_pack(data, MSGPACK_SIMPLE_MODE);
-msgpack_unpack(data, MSGPACK_QORE_MODE);
-    @endcode
-
-    With the objects of class @ref msgpack::MsgPack "MsgPack", operation mode can be passed as a constructor argument or set later via the @ref msgpack::MsgPack::setOperationMode "setOperationMode" method, as in the following example:
-    @code
-MsgPack mp(MSGPACK_QORE_MODE);
-mp.setOperationMode(MSGPACK_SIMPLE_MODE);
-    @endcode
-
-    @subsection msgpack_operation_mode_constants Operation Mode Constants
-
-    |! Constant |! Mode |! Value
-    | @ref msgpack::MSGPACK_SIMPLE_MODE "MSGPACK_SIMPLE_MODE" | simple mode | 0
-    | @ref msgpack::MSGPACK_QORE_MODE "MSGPACK_QORE_MODE" | qore mode | 1
-
-    @subsection msgpack_simple_mode Simple Mode
-
-    Simple mode is used for good compatibility with other software using MessagePack for (de)serialization of data. And because not all Qore datatypes have their MessagePack counterpart, some values are modified or automatically converted into different types to maintain compatibility. This happens to values of the @ref date, @ref null and @ref number datatypes, and to some values of the @ref string datatype.
-
-    Simple mode is the default mode of operation for the packing/unpacking functions and for the @ref msgpack::MsgPack "MsgPack" objects.
-
-    The following table shows how Qore values are mapped to MessagePack values during serialization:
-    |!Qore Type|!MessagePack Type|!Notes
-    |\c binary|<tt>Raw Binary</tt>|&#160;
-    |\c bool|\c Boolean|&#160;
-    |\c date (absolute)|<tt>Timestamp (extension)</tt>|date is converted into MessagePack Timestamp format
-    |\c date (relative)|<tt>Raw String</tt>|date is converted into ISO-8601 duration format string (PnYnMnDTnHnMnS)
-    |\c float|\c Float (64bit)|&#160;
-    |\c hash|\c Map|loses complex type information
-    |\c int|\c Integer|&#160;
-    |\c list|\c Array|loses complex type information
-    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|&#160;
-    |\c nothing|\c Nil|&#160;
-    |\c null|\c Nil|\c NULL values are serialized to \c Nil values, becoming the same as \c NOTHING values
-    |\c number|\c Float (64bit)|numbers are converted into double (64-bit float) values, thereby possibly losing precision
-    |\c object| | not supported
-    |\c string|<tt>Raw String</tt>|all strings are converted to UTF-8 encoding
-
-    The following table shows how MessagePack values are unpacked to Qore values:
-    |!MessagePack Type|!Qore Type|!Notes
-    |\c Array|\c list|&#160;
-    |\c Boolean|\c bool|&#160;
-    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|&#160;
-    |\c Float|\c float|&#160;
-    |\c Integer (signed)|\c int|&#160;
-    |\c Integer (unsigned)|\c int or \c number|converted to \c int if smaller than 2^63 - 1, and converted to \c number otherwise
-    |\c Map|\c hash|&#160;
-    |\c Nil|\c nothing|&#160;
-    |<tt>Raw Binary</tt>|\c binary|&#160;
-    |<tt>Raw String</tt>|\c string|assumed to be in UTF-8 encoding
-    |<tt>Timestamp (extension)</tt>|\c date|&#160;
-
-    @subsection msgpack_qore_mode Qore Mode
-
-    Qore mode aims for maximum compatibility with other Qore applications using this module and maintaining precision of data. Basic MessagePack types are used wherever possible and MessagePack extensions are used for Qore datatypes which don't have any MessagePack counterpart. This happens to values of the @ref date, @ref null and @ref number datatypes, and to some values of the @ref string datatype.
-
-    The following table shows how Qore values are mapped to MessagePack values during Qore mode serialization:
-    |!Qore Type|!MessagePack Type|!Notes
-    |\c binary|<tt>Raw Binary</tt>|&#160;
-    |\c bool|\c Boolean|&#160;
-    |\c date (absolute)|\c Extension (@ref msgpack_ext_date)|&#160;
-    |\c date (relative)|\c Extension (@ref msgpack_ext_date)|&#160;
-    |\c float|\c Float (64bit)|&#160;
-    |\c hash|\c Map|loses complex type information
-    |\c int|\c Integer|&#160;
-    |\c list|\c Array|loses complex type information
-    |@ref msgpack::MsgPackExtension "MsgPackExtension"|\c Extension|&#160;
-    |\c nothing|\c Nil|&#160;
-    |\c null|\c Extension (@ref msgpack_ext_null)|&#160;
-    |\c number|\c Extension (@ref msgpack_ext_number)|&#160;
-    |\c object| | not supported
-    |\c string (UTF-8)|<tt>Raw String</tt>|&#160;
-    |\c string (non-UTF8)|\c Extension (@ref msgpack_ext_string)|&#160;
-
-    The following table shows how MessagePack values are unpacked to Qore values in Qore mode:
-    |!MessagePack Type|!Qore Type|!Notes
-    |\c Array|\c list|&#160;
-    |\c Boolean|\c bool|&#160;
-    |\c Extension|@ref msgpack::MsgPackExtension "MsgPackExtension"|&#160;
-    |\c Extension (@ref msgpack_ext_date)|\c date|&#160;
-    |\c Extension (@ref msgpack_ext_null)|\c null|&#160;
-    |\c Extension (@ref msgpack_ext_number)|\c number|&#160;
-    |\c Extension (@ref msgpack_ext_string)|\c string|&#160;
-    |\c Float|\c float|&#160;
-    |\c Integer (signed)|\c int|&#160;
-    |\c Integer (unsigned)|\c int or \c number|converted to \c int if smaller than 2^63 - 1, and converted to \c number otherwise
-    |\c Map|\c hash|&#160;
-    |\c Nil|\c nothing|&#160;
-    |<tt>Raw Binary</tt>|\c binary|&#160;
-    |<tt>Raw String</tt>|\c string|assumed to be in UTF-8 encoding
-    |<tt>Timestamp (extension)</tt>|\c date|&#160;
 
     @section msgpack_extensions MessagePack Extensions
 
-    For handling MessagePack extensions, MessagePack module uses @ref msgpack::MsgPackExtension "MsgPackExtension" class as a wrapper for extension data. This class holds two pieces of information - extension binary data and extension type (ID). @ref msgpack::MsgPackExtension "MsgPackExtension" objects are returned from the unpacking functions and user can also create these objects themselves and pass them to packing functions.
+    @subpage msgpack_extensionsguide
 
-    @subsection Qore Extension Types
-
-    In Qore operation mode values of the @ref date, @ref null and @ref number datatypes, and non-UTF8 @ref string "strings" get serialized (packed) as MessagePack extensions with the following extension types:
-
-    |! Constant |! Extension for type |! Value
-    | @ref msgpack::MSGPACK_EXT_QORE_NULL "MSGPACK_EXT_QORE_NULL" | \c null | 0
-    | @ref msgpack::MSGPACK_EXT_QORE_DATE "MSGPACK_EXT_QORE_DATE" | \c date | 1
-    | @ref msgpack::MSGPACK_EXT_QORE_NUMBER "MSGPACK_EXT_QORE_NUMBER" | \c number | 2
-    | @ref msgpack::MSGPACK_EXT_QORE_STRING "MSGPACK_EXT_QORE_STRING" | \c string | 3
-
-    @subsection msgpack_ext_date Date Extension
-
-    Qore date extension type uses @ref msgpack::MSGPACK_EXT_QORE_DATE "MSGPACK_EXT_QORE_DATE" extension type ID and is saved in the following format (all data in network byte order - big-endian):
-
-    Absolute dates:
-    |! |! |! |!
-    | 1 (absolute) | <a href="https://en.wikipedia.org/wiki/Unix_time">UNIX Epoch time</a> | micro-seconds | <a href="https://en.wikipedia.org/wiki/UTC_offset">UTC offset in seconds</a>
-    | 8-bit int | 64-bit int | 32-bit int | 32-bit int
-
-    Relative dates:
-    |! |! |! |! |! |! |! |!
-    | 0 (not absolute) | years | months | days | hours | minutes | seconds |  micro-seconds
-    | 8-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int | 32-bit int
-
-    @subsection msgpack_ext_null NULL Extension
-
-    Qore null extension type uses @ref msgpack::MSGPACK_EXT_QORE_NULL "MSGPACK_EXT_QORE_NULL" extension type ID and has no data (zero-length).
-
-    @subsection msgpack_ext_number Number Extension
-
-    Qore number extension type uses @ref msgpack::MSGPACK_EXT_QORE_NUMBER "MSGPACK_EXT_QORE_NUMBER" extension type ID and is saved in the following format (all data in network byte order - big-endian):
-
-    NaN value:
-    |!
-    | @ref msgpack::MSGPACK_NUMBER_NAN "MSGPACK_NUMBER_NAN"
-    | 8-bit int
-
-    Infinity:
-    |!
-    | @ref msgpack::MSGPACK_NUMBER_INF "MSGPACK_NUMBER_INF"
-    | 8-bit int
-
-    Negative infinity:
-    |!
-    | @ref msgpack::MSGPACK_NUMBER_NINF "MSGPACK_NUMBER_NINF"
-    | 8-bit int
-
-    Normal numbers:
-    |! |! |!
-    | @ref msgpack::MSGPACK_NUMBER_NORM "MSGPACK_NUMBER_NORM" | precision | number string representation
-    | 8-bit int | 32-bit int | 1+ chars
-
-    @subsubsection msgpack_number_ext_constants Number Sub-type Constants
-
-    The following constants are used for distinguishing sub-types of the @ref msgpack_ext_number type:
-
-    |! Constant |! Number type |! Value
-    | @ref msgpack::MSGPACK_NUMBER_NAN "MSGPACK_NUMBER_NAN" | \c NaN | 0
-    | @ref msgpack::MSGPACK_NUMBER_INF "MSGPACK_NUMBER_INF" | \c Positive infinity | 1
-    | @ref msgpack::MSGPACK_NUMBER_NINF "MSGPACK_NUMBER_NINF" | \c Negative infinity | 2
-    | @ref msgpack::MSGPACK_NUMBER_NORM "MSGPACK_NUMBER_NORM" | \c Normal number | 3
-
-    @subsection msgpack_ext_string String Extension
-
-    Qore string extension type uses @ref msgpack::MSGPACK_EXT_QORE_STRING "MSGPACK_EXT_QORE_STRING" extension type ID and is saved in the following format (all data in network byte order - big-endian):
-
-    |! |!
-    | encoding constant | string data
-    | 8-bit int | 1+ chars
-
-    I.e. 1 byte for encoding and the rest for string data.
-
-    @subsubsection msgpack_encoding_constants Encoding Constants
-
-    The following constants are used in the @ref msgpack_ext_string format:
-    |! Constant |! Encoding |! Value
-    | @ref msgpack::QE_USASCII "QE_USASCII" | \c US-ASCII | 0
-    | @ref msgpack::QE_UTF8 "QE_UTF8" | \c UTF-8 | 1
-    | @ref msgpack::QE_UTF16 "QE_UTF16" | \c UTF-16 | 2
-    | @ref msgpack::QE_UTF16BE "QE_UTF16BE" | \c UTF-16BE | 3
-    | @ref msgpack::QE_UTF16LE "QE_UTF16LE" | \c UTF-16LE | 4
-    | @ref msgpack::QE_ISO_8859_1 "QE_ISO_8859_1" | \c ISO-8859-1 | 5
-    | @ref msgpack::QE_ISO_8859_2 "QE_ISO_8859_2" | \c ISO-8859-2 | 6
-    | @ref msgpack::QE_ISO_8859_3 "QE_ISO_8859_3" | \c ISO-8859-3 | 7
-    | @ref msgpack::QE_ISO_8859_4 "QE_ISO_8859_4" | \c ISO-8859-4 | 8
-    | @ref msgpack::QE_ISO_8859_5 "QE_ISO_8859_5" | \c ISO-8859-5 | 9
-    | @ref msgpack::QE_ISO_8859_6 "QE_ISO_8859_6" | \c ISO-8859-6 | 10
-    | @ref msgpack::QE_ISO_8859_7 "QE_ISO_8859_7" | \c ISO-8859-7 | 11
-    | @ref msgpack::QE_ISO_8859_8 "QE_ISO_8859_8" | \c ISO-8859-8 | 12
-    | @ref msgpack::QE_ISO_8859_9 "QE_ISO_8859_9" | \c ISO-8859-9 | 13
-    | @ref msgpack::QE_ISO_8859_10 "QE_ISO_8859_10" | \c ISO-8859-10 | 14
-    | @ref msgpack::QE_ISO_8859_11 "QE_ISO_8859_11" | \c ISO-8859-11 | 15
-    | @ref msgpack::QE_ISO_8859_13 "QE_ISO_8859_13" | \c ISO-8859-13 | 16
-    | @ref msgpack::QE_ISO_8859_14 "QE_ISO_8859_14" | \c ISO-8859-14 | 17
-    | @ref msgpack::QE_ISO_8859_15 "QE_ISO_8859_15" | \c ISO-8859-15 | 18
-    | @ref msgpack::QE_ISO_8859_16 "QE_ISO_8859_16" | \c ISO-8859-16 | 19
-    | @ref msgpack::QE_KOI8_R "QE_KOI8_R" | \c KOI8-R | 20
-    | @ref msgpack::QE_KOI8_U "QE_KOI8_U" | \c KOI8-U | 21
-    | @ref msgpack::QE_KOI7 "QE_KOI7" | \c KOI7 | 22
 
     @section msgpackreleasenotes Release Notes
 
-    @subsection msgpackv1_0_1 MessagePack Module Version 1.0.1
-    - aligned with %Qore changes related to doxygen
+    @subpage msgpackreleasenotesguide
 
-    @subsection msgpackv1_0 MessagePack Module Version 1.0
-    - initial release
 */
