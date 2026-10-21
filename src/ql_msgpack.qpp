@@ -4,7 +4,7 @@
 
   Qore MessagePack module
 
-  Copyright (C) 2018 Qore Technologies, s.r.o.
+  Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
@@ -189,7 +189,8 @@ namespace msgpack;
 
     @return packed value in MessagePack format
 
-    @throw ENCODING-ERROR encoding error occured during packing
+    @throw ENCODING-CONVERSION-ERROR a string cannot be converted to UTF-8 in
+    @ref msgpack_simple_mode "simple mode"; only this exception is raised
     @throw INVALID-MODE passed operation mode is invalid
     @throw PACK-ERROR packing failed
 
@@ -215,8 +216,8 @@ hash example = {"compact": True, "schema": 0};
             return QoreValue();
         return result;
     }
-    catch (msgpack::MsgPackException ex) {
-        xsink->raiseException("PACK-ERROR", ex.err);
+    catch (const msgpack::MsgPackException& ex) {
+        ex.raise(xsink, "PACK-ERROR");
         return QoreValue();
     }
 }
@@ -228,9 +229,11 @@ hash example = {"compact": True, "schema": 0};
 
     @returns unpacked Qore value
 
-    @throw ENCODING-ERROR encoding error occured during unpacking
+    @throw ENCODING-CONVERSION-ERROR a map key in @ref msgpack_qore_mode "Qore mode" cannot be converted to the
+    default character encoding; only this exception is raised
     @throw INVALID-MODE passed operation mode is invalid
-    @throw UNPACK-ERROR unpacking failed
+    @throw UNPACK-ERROR unpacking failed, or a map key contains a NUL character, which a Qore hash key cannot hold;
+    a key is never cut at a NUL character
 
     @par Example:
     @code
@@ -257,8 +260,8 @@ auto msgpack_unpack(binary data, int mode = MSGPACK_SIMPLE_MODE) [flags=RET_VALU
             return QoreValue();
         return result;
     }
-    catch (msgpack::MsgPackException ex) {
-        xsink->raiseException("UNPACK-ERROR", ex.err);
+    catch (const msgpack::MsgPackException& ex) {
+        ex.raise(xsink, "UNPACK-ERROR");
         return QoreValue();
     }
 }

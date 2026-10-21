@@ -4,7 +4,7 @@
 
     Qore MessagePack module
 
-    Copyright (C) 2018 Qore Technologies, s.r.o.
+    Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the "Software"),
@@ -65,8 +65,8 @@ public:
                 return QoreValue();
             return result;
         }
-        catch (msgpack::MsgPackException ex) {
-            xsink->raiseException("PACK-ERROR", ex.err);
+        catch (const msgpack::MsgPackException& ex) {
+            ex.raise(xsink, "PACK-ERROR");
         }
         return QoreValue();
     }
@@ -83,8 +83,8 @@ public:
                 return QoreValue();
             return result;
         }
-        catch (msgpack::MsgPackException ex) {
-            xsink->raiseException("UNPACK-ERROR", ex.err);
+        catch (const msgpack::MsgPackException& ex) {
+            ex.raise(xsink, "UNPACK-ERROR");
         }
         return QoreValue();
     }

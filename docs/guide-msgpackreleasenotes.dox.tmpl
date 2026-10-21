@@ -4,6 +4,18 @@
 
     @tableofcontents
 
+    @section msgpackv1_0_2 MessagePack Module Version 1.0.2
+    - a map key with a NUL character raises \c UNPACK-ERROR when unpacking; previously the key was cut at the NUL
+      character, so it named another key
+    - in @ref msgpack_qore_mode "Qore mode", a map key in a character encoding other than the default encoding names
+      the same key as the equivalent string in the default encoding; previously its bytes were used as they were
+    - an encoding conversion error when packing or unpacking raises only \c ENCODING-CONVERSION-ERROR; previously a
+      second \c PACK-ERROR or \c UNPACK-ERROR exception was raised with it
+    - packing a deleted @ref msgpack::MsgPackExtension "MsgPackExtension" object in a list or hash raises only
+      \c OBJECT-ALREADY-DELETED; previously debug builds aborted, and other builds raised a second \c PACK-ERROR
+      exception with it
+    - fixed a memory leak when packing a value that cannot be serialized
+
     @section msgpackv1_0_1 MessagePack Module Version 1.0.1
     - aligned with %Qore changes related to doxygen
 

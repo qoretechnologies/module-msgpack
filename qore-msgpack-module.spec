@@ -11,7 +11,7 @@
 %bcond_without tests
 %bcond_without docs
 Name: qore-msgpack-module
-Version: 1.0.1
+Version: 1.0.2
 Release: 2%{?dist}
 Summary: MessagePack serialization for Qore
 License: MIT

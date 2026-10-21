@@ -4,7 +4,7 @@
 
     Qore MessagePack module
 
-    Copyright (C) 2018 Qore Technologies, s.r.o.
+    Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the "Software"),
@@ -28,8 +28,10 @@
 #include "msgpack_unpack.h"
 
 // std
+#include <cassert>
 #include <climits>
 #include <cstdint>
+#include <cstring>
 
 // module sources
 #include "msgpack_extensions.h"
@@ -39,6 +41,66 @@
 
 namespace msgpack {
 namespace intern {
+
+//! Destroys an MPack reader when it goes out of scope
+/** If the reader was not destroyed with destroy(), such as when a C++ exception is thrown while unpacking, the
+    reader is put in an error state first, so its tracking data is freed without an incomplete-read check.
+*/
+class MpackReaderHelper {
+public:
+    DLLLOCAL MpackReaderHelper(mpack_reader_t& reader) : reader(reader) {
+    }
+
+    DLLLOCAL ~MpackReaderHelper() {
+        if (!destroyed) {
+            mpack_reader_flag_error(&reader, mpack_error_data);
+            mpack_reader_destroy(&reader);
+        }
+    }
+
+    //! destroys the reader and returns its error state
+    DLLLOCAL mpack_error_t destroy() {
+        destroyed = true;
+        return mpack_reader_destroy(&reader);
+    }
+
+private:
+    mpack_reader_t& reader;
+    bool destroyed = false;
+};
+
+//! Returns the message for a map key with a NUL character, which a Qore hash key cannot hold
+/** The key is shown with at most its first 64 characters, with control characters, quotes and backslashes
+    escaped, so that the NUL character and where it is can be seen.
+*/
+static std::string get_nul_key_desc(const QoreString& key, const char* nul) {
+    static constexpr size_t max_chars = 64;
+    const char* p = key.c_str();
+    size_t len = key.size();
+    bool invalid = false;
+    size_t show = key.getEncoding()->getByteLen(p, p + len, max_chars, invalid);
+    if (invalid || show > len) {
+        show = len < max_chars ? len : max_chars;
+    }
+    QoreString desc("map key \"");
+    for (size_t i = 0; i < show; ++i) {
+        unsigned char c = static_cast<unsigned char>(p[i]);
+        if (c < 0x20 || c == 0x7f) {
+            desc.sprintf("\\x%02x", c);
+        } else if (c == '"' || c == '\\') {
+            desc.concat('\\');
+            desc.concat(static_cast<char>(c));
+        } else {
+            desc.concat(static_cast<char>(c));
+        }
+    }
+    if (show < len) {
+        desc.concat("...");
+    }
+    desc.sprintf("\" contains a NUL character at byte offset %zu, which a Qore hash key cannot hold",
+        static_cast<size_t>(nul - p));
+    return desc.c_str();
+}
 
 QoreListNode* msgpack_unpack_array(mpack_reader_t* reader, mpack_tag_t tag, OperationMode mode, ExceptionSink* xsink) {
     // prepare list
@@ -128,8 +190,23 @@ QoreHashNode* msgpack_unpack_map(mpack_reader_t* reader, mpack_tag_t tag, Operat
             break;
         }
 
+        // a hash key is stored in the default encoding; a key in another encoding (a Qore string extension in Qore
+        // mode) names the same key as the equivalent string in the default encoding
+        QoreStringValueHelper key_val(*key);
+        TempEncodingHelper key_str(*key_val, QCS_DEFAULT, xsink);
+        if (*xsink) {
+            // stop reading; the conversion error explains the failure
+            mpack_reader_flag_error(reader, mpack_error_data);
+            break;
+        }
+
+        // a hash key cannot hold a NUL character; the key would be cut at the NUL and name another key
+        const char* nul = static_cast<const char*>(memchr(key_str->c_str(), '\0', key_str->size()));
+        if (nul) {
+            throw MsgPackException(get_nul_key_desc(**key_str, nul).c_str());
+        }
+
         // add element to hash
-        QoreStringValueHelper key_str(*key);
         hash->setKeyValue(key_str->c_str(), value.release(), xsink);
     }
 
@@ -199,6 +276,7 @@ QoreValue msgpack_unpack_value(mpack_reader_t* reader, OperationMode mode, Excep
 //-------------------------
 
 QoreValue msgpack_unpack(const BinaryNode* data, OperationMode mode, ExceptionSink* xsink) {
+    assert(xsink);
     ValueHolder unpacked(xsink);
     const char* dataCheck = nullptr;
     const char* buffer = static_cast<const char*>(data->getPtr());
@@ -210,8 +288,9 @@ QoreValue msgpack_unpack(const BinaryNode* data, OperationMode mode, ExceptionSi
     if (buffer == nullptr || size == 0)
         return QoreValue();
 
-    // initialize reader
+    // initialize reader; the helper destroys it also when a C++ exception is thrown while unpacking
     mpack_reader_init_data(&reader, buffer, size);
+    MpackReaderHelper reader_helper(reader);
 
     // unpack the data
     do {
@@ -233,7 +312,11 @@ QoreValue msgpack_unpack(const BinaryNode* data, OperationMode mode, ExceptionSi
     while (remaining && dataCheck);
 
     // finish reading
-    mpack_error_t result = mpack_reader_destroy(&reader);
+    mpack_error_t result = reader_helper.destroy();
+    if (*xsink) {
+        // a Qore exception, such as an encoding conversion error, explains the failure
+        return QoreValue();
+    }
     if (result != mpack_ok) {
         throw msgpack::getMsgPackException(result);
     }

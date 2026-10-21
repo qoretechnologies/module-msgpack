@@ -23,6 +23,8 @@ class MsgPackTest inherits QUnit::Test {
         addTestCase("Indirect references test", \indirectReferencesTest());
         addTestCase("Named argument calls", \namedArgumentTest());
         addTestCase("Timestamp test", \timestampTest());
+        addTestCase("Map key test", \mapKeyTest());
+        addTestCase("Pack error test", \packErrorTest());
         set_return_value(main());
     }
 
@@ -761,6 +763,104 @@ class MsgPackTest inherits QUnit::Test {
         assertEq(NT_OBJECT, rv.typeCode());
         assertEq("MsgPackExtension", rv.className());
         assertEq(NULL, msgpack_unpack(b, MSGPACK_QORE_MODE));
+    }
+
+    mapKeyTest() {
+        # a map key with a NUL character cannot be a Qore hash key; it is not cut at the NUL
+        binary nul_key = <81a3610062> + msgpack_pack(1);
+        string desc = "map key \"a\\x00b\" contains a NUL character at byte offset 1, which a Qore hash key cannot "
+            "hold";
+        hash<ExceptionInfo> ex = getUnpackError(nul_key);
+        assertEq("UNPACK-ERROR", ex.err);
+        assertEq(desc, ex.desc);
+        assertNothing(ex.next);
+        assertEq(desc, getUnpackError(nul_key, MSGPACK_QORE_MODE).desc);
+        MsgPack mp();
+        assertThrows("UNPACK-ERROR", "contains a NUL character at byte offset 1", \mp.unpack(), nul_key);
+        # also in a nested map, after other values and in an array
+        assertEq(desc, getUnpackError(<92> + msgpack_pack(1) + nul_key).desc);
+        assertEq(desc, getUnpackError(msgpack_pack({"x": 1}) + <81a178> + nul_key).desc);
+        assertEq("map key \"\\x00\" contains a NUL character at byte offset 0, which a Qore hash key cannot hold",
+            getUnpackError(<81a100> + msgpack_pack(1)).desc);
+
+        # the key is shown as it is: it is not a format string, and quotes and backslashes are escaped
+        ex = getUnpackError(<81> + msgpack_pack("%s%n%s\x00\"\\") + msgpack_pack(1));
+        assertEq("UNPACK-ERROR", ex.err);
+        assertEq("map key \"%s%n%s\\x00\\\"\\\\\" contains a NUL character at byte offset 6, which a Qore hash key "
+            "cannot hold", ex.desc);
+
+        # a long key is shown with its first 64 characters
+        ex = getUnpackError(<81> + msgpack_pack(strmul("k", 70) + "\x00") + msgpack_pack(1));
+        assertEq("map key \"" + strmul("k", 64) + "...\" contains a NUL character at byte offset 70, which a Qore "
+            "hash key cannot hold", ex.desc);
+
+        # keys without a NUL character are unchanged
+        hash<auto> h = {"a b": 1, "": 2, "\u00e9t\u00e9": 3, "x\ty": (1, {"n": 4})};
+        assertEq(h, msgpack_unpack(msgpack_pack(h)));
+        assertEq(h, msgpack_unpack(msgpack_pack(h, MSGPACK_QORE_MODE), MSGPACK_QORE_MODE));
+
+        # in Qore mode, a key in another character encoding names the same key in the default encoding
+        binary utf16_key = <81> + msgpack_pack(convert_encoding("key", "UTF-16BE"), MSGPACK_QORE_MODE)
+            + msgpack_pack(1);
+        assertEq({"key": 1}, msgpack_unpack(utf16_key, MSGPACK_QORE_MODE));
+        binary latin1_key = <81> + msgpack_pack(convert_encoding("\u00e9", "ISO-8859-1"), MSGPACK_QORE_MODE)
+            + msgpack_pack(1);
+        assertEq({"\u00e9": 1}, msgpack_unpack(latin1_key, MSGPACK_QORE_MODE));
+        # a NUL character is found after the conversion
+        binary utf16_nul_key = <81> + msgpack_pack(convert_encoding("a\x00b", "UTF-16BE"), MSGPACK_QORE_MODE)
+            + msgpack_pack(1);
+        assertEq(desc, getUnpackError(utf16_nul_key, MSGPACK_QORE_MODE).desc);
+        # a key that cannot be converted raises only the conversion error: a UTF-16BE string (encoding 3) with an
+        # unpaired surrogate as a Qore string extension (type 3)
+        ex = getUnpackError(<81c7050303d8000041> + msgpack_pack(1), MSGPACK_QORE_MODE);
+        assertEq("ENCODING-CONVERSION-ERROR", ex.err);
+        assertNothing(ex.next);
+    }
+
+    packErrorTest() {
+        # a string that cannot be converted to UTF-8 raises only the conversion error
+        string bad = binary_to_string(<d8000041>, "UTF-16BE");
+        hash<ExceptionInfo> ex = getPackError(bad);
+        assertEq("ENCODING-CONVERSION-ERROR", ex.err);
+        assertNothing(ex.next);
+        ex = getPackError({"a": (1, bad)});
+        assertEq("ENCODING-CONVERSION-ERROR", ex.err);
+        assertNothing(ex.next);
+
+        # a deleted extension object raises only the error of the object
+        MsgPackExtension ext(1, <00>);
+        list<auto> l = (ext,);
+        delete ext;
+        ex = getPackError(l);
+        assertEq("OBJECT-ALREADY-DELETED", ex.err);
+        assertNothing(ex.next);
+
+        # an unsupported value raises PACK-ERROR; nothing is left of the partly written message
+        ex = getPackError({"a": strmul("x", 100000), "m": new Mutex()});
+        assertEq("PACK-ERROR", ex.err);
+        assertEq("serializing objects is not supported (class: 'Mutex')", ex.desc);
+    }
+
+    #! returns the exception raised by msgpack_pack(); raises TEST-ERROR if the call succeeds
+    private hash<ExceptionInfo> getPackError(auto value) {
+        try {
+            auto x = msgpack_pack(value);
+            remove x;
+        } catch (hash<ExceptionInfo> ex) {
+            return ex;
+        }
+        throw "TEST-ERROR", sprintf("msgpack_pack(%y) did not raise an exception", value);
+    }
+
+    #! returns the exception raised by msgpack_unpack(); raises TEST-ERROR if the call succeeds
+    private hash<ExceptionInfo> getUnpackError(binary data, int mode = MSGPACK_SIMPLE_MODE) {
+        try {
+            auto x = msgpack_unpack(data, mode);
+            remove x;
+        } catch (hash<ExceptionInfo> ex) {
+            return ex;
+        }
+        throw "TEST-ERROR", sprintf("msgpack_unpack(%y, %d) did not raise an exception", data, mode);
     }
 
     timestampTest() {

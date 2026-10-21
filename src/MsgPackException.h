@@ -4,7 +4,7 @@
 
   Qore MessagePack module
 
-  Copyright (C) 2018 Qore Technologies, s.r.o.
+  Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
@@ -30,6 +30,7 @@
 
 // std
 #include <cstdarg>
+#include <string>
 
 // qore
 #include "qore/Qore.h"
@@ -50,16 +51,28 @@ DLLLOCAL extern const char* MpackErrorData;
 DLLLOCAL extern const char* MpackErrorUnknownIntern;
 
 //! MessagePack module exception class.
+/** The exception owns its message, so it can be copied and caught by reference or by value; the message is
+    raised with a "%s" format (see raise()), so it may hold any text, including data from the message being packed
+    or unpacked
+*/
 class MsgPackException {
 public:
     DLLLOCAL MsgPackException(const char* nerr = MpackErrorUnknownIntern) : err(nerr) {}
 
-    const char* err;
+    //! raises the exception as a Qore exception with the given code
+    DLLLOCAL void raise(ExceptionSink* xsink, const char* code) const {
+        xsink->raiseException(code, "%s", err.c_str());
+    }
+
+    //! the error message
+    std::string err;
 };
 
+//! MessagePack module exception with a formatted message
 class MsgPackExceptionMaker : public MsgPackException {
 public:
-    DLLLOCAL MsgPackExceptionMaker(const char* fmt, ...) : MsgPackException(nullptr) {
+    DLLLOCAL MsgPackExceptionMaker(const char* fmt, ...) : MsgPackException("") {
+        QoreString buf;
         va_list args;
         while (true) {
             va_start(args, fmt);
@@ -70,9 +83,6 @@ public:
         }
         err = buf.c_str();
     }
-
-private:
-    QoreString buf;
 };
 
 DLLLOCAL MsgPackException getMsgPackException(mpack_error_t error);

@@ -4,7 +4,7 @@
 
   Qore MessagePack module
 
-  Copyright (C) 2018 Qore Technologies, s.r.o.
+  Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@
 #include "msgpack_pack.h"
 
 // std
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -206,8 +207,13 @@ void msgpack_pack_qore_value(mpack_writer_t* writer, QoreValue value, OperationM
             if (obj->getClass(CID_MSGPACKEXTENSION)) {
                 PrivateDataRefHolder<MsgPackExtension> holder(obj, CID_MSGPACKEXTENSION, xsink);
                 MsgPackExtension* ext = *holder;
-                if (ext)
+                if (ext) {
                     msgpack_pack_ext_ext(writer, ext);
+                } else {
+                    // the Qore exception explains the failure; the error state stops writing, so an enclosing
+                    // container is not closed with an element missing
+                    mpack_writer_flag_error(writer, mpack_error_data);
+                }
                 break;
             }
             throw msgpack::MsgPackExceptionMaker("serializing objects is not supported (class: '%s')", obj->getClassName());
@@ -223,23 +229,59 @@ void msgpack_pack_qore_value(mpack_writer_t* writer, QoreValue value, OperationM
 }
 
 
+//! Destroys an MPack writer when it goes out of scope
+/** If the writer was not destroyed with destroy(), such as when a C++ exception is thrown while packing, the writer
+    is put in an error state first, so its buffer and tracking data are freed.
+*/
+class MpackWriterHelper {
+public:
+    DLLLOCAL MpackWriterHelper(mpack_writer_t& writer) : writer(writer) {
+    }
+
+    DLLLOCAL ~MpackWriterHelper() {
+        if (!destroyed) {
+            mpack_writer_flag_error(&writer, mpack_error_data);
+            mpack_writer_destroy(&writer);
+        }
+    }
+
+    //! destroys the writer and returns its error state
+    DLLLOCAL mpack_error_t destroy() {
+        destroyed = true;
+        return mpack_writer_destroy(&writer);
+    }
+
+private:
+    mpack_writer_t& writer;
+    bool destroyed = false;
+};
+
 //-----------------------
 // msgpack_pack function
 //-----------------------
 
 QoreValue msgpack_pack(QoreValue& data, OperationMode mode, ExceptionSink* xsink) {
+    assert(xsink);
     size_t size = 0;
     char* buffer = nullptr;
     mpack_writer_t writer;
 
-    // initialize writer
+    // initialize writer; the helper destroys it also when a C++ exception is thrown while packing
     mpack_writer_init_growable(&writer, &buffer, &size);
+    MpackWriterHelper writer_helper(writer);
 
     // pack the data
     msgpack_pack_qore_value(&writer, data, mode, xsink);
 
     // finish writing
-    mpack_error_t result = mpack_writer_destroy(&writer);
+    if (*xsink) {
+        // a Qore exception, such as an encoding conversion error, explains the failure; the error state frees the
+        // buffer
+        mpack_writer_flag_error(&writer, mpack_error_data);
+        writer_helper.destroy();
+        return QoreValue();
+    }
+    mpack_error_t result = writer_helper.destroy();
     if (result != mpack_ok) {
         throw msgpack::getMsgPackException(result);
     }
