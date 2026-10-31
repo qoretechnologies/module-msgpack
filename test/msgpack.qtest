@@ -750,7 +750,7 @@ class MsgPackTest inherits QUnit::Test {
         }
 
         {
-            date d = P1H;
+            date d = PT1H;
             b = msgpack_pack(d, MSGPACK_QORE_MODE);
             rv = msgpack_unpack(b);
             assertEq(NT_OBJECT, rv.typeCode());
