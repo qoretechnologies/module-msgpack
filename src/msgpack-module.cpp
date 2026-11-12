@@ -4,7 +4,7 @@
 
   Qore MessagePack module
 
-  Copyright (C) 2018 - 2021 Qore Technologies, s.r.o.
+  Copyright (C) 2018 - 2026 Qore Technologies, s.r.o.
 
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
@@ -43,6 +43,9 @@ static void msgpack_module_init(QoreModuleInitContext& ctx, ExceptionSink& xsink
 static void msgpack_module_ns_init(QoreNamespace* rns, QoreNamespace* qns, ExceptionSink& xsink);
 static void msgpack_module_delete();
 
+// the module's namespace; purged when the module is deleted (see QoreModuleInfo::ns)
+QoreNamespace MsgPackNS("Qore::msgpack");
+
 extern "C" DLLEXPORT void msgpack_qore_module_desc(QoreModuleInfo& mod_info) {
     mod_info.name = "msgpack";
     mod_info.version = PACKAGE_VERSION;
@@ -54,11 +57,13 @@ extern "C" DLLEXPORT void msgpack_qore_module_desc(QoreModuleInfo& mod_info) {
     mod_info.init = msgpack_module_init;
     mod_info.ns_init = msgpack_module_ns_init;
     mod_info.del = msgpack_module_delete;
+#ifdef QORE_HAS_MODULE_NS_PURGE
+    // the namespace is purged when the module is deleted, before the types are freed (see QoreModuleInfo::ns)
+    mod_info.ns = &MsgPackNS;
+#endif
     mod_info.license = QL_MIT;
     mod_info.license_str = "MIT";
 }
-
-QoreNamespace MsgPackNS("Qore::msgpack");
 
 static void msgpack_module_init(QoreModuleInitContext& ctx, ExceptionSink& xsink) {
     MsgPackNS.addSystemClass(initMsgPackClass(MsgPackNS));
