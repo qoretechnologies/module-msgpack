@@ -195,7 +195,7 @@ namespace msgpack;
     @throw PACK-ERROR packing failed
 
     @par Example:
-    @code
+    @code{.py}
 hash example = {"compact": True, "schema": 0};
 *binary packed = msgpack_pack(example);
     @endcode
@@ -236,7 +236,7 @@ hash example = {"compact": True, "schema": 0};
     a key is never cut at a NUL character
 
     @par Example:
-    @code
+    @code{.py}
 hash example = {"compact": True, "schema": 0};
 *binary packed = msgpack_pack(example);
 
