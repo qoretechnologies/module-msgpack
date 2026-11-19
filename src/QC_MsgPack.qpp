@@ -68,7 +68,7 @@ int MsgPack::getOperationMode() {
     @throw INVALID-MODE passed operation mode is invalid
 
     @par Example:
-    @code
+    @code{.py}
 MsgPack mp();
 mp.setOperationMode(MSGPACK_QORE_MODE);
     @endcode
@@ -89,7 +89,7 @@ nothing MsgPack::setOperationMode(int mode) [flags=NAMED_ARGS] {
     @throw PACK-ERROR packing failed
 
     @par Example:
-    @code
+    @code{.py}
 MsgPack mp();
 hash example = {"compact": True, "schema": 0};
 *binary packed = mp.pack(example);
@@ -111,7 +111,7 @@ hash example = {"compact": True, "schema": 0};
     a key is never cut at a NUL character
 
     @par Example:
-    @code
+    @code{.py}
 MsgPack mp();
 hash example = {"compact": True, "schema": 0};
 *binary packed = mp.pack(example);
